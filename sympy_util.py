@@ -1,5 +1,6 @@
 import numpy as np
 from sympy import lambdify, Dummy
+from sympy.physics.mechanics import msubs
 
 class RHSWrapper():
     def __init__(self, rhs, dynamics, params=[], values=[]):
@@ -16,11 +17,14 @@ class RHSWrapper():
         # create a function to evaluate the right hand side
         self._rhs_func = lambdify(list(self._dummys) + list(self.params), self._dummy_rhs)
     
-    def step(self, x, t, values=None):
-        # use the input values if provided, else use the stored values
-        v = self.values if values is None else values
-        assert len(v) == len(self.params)
-        
+    def __call__(self, x, t, command=None):
+        v = self.values
+
+        # if provided, substitue the command into the values list.
+        # this assumes that the controlled parameters are first in the list
+        if command is not None:
+            v[:command.shape[0]] = command
+
         # the returned values must be a flat array for odient
         args = np.hstack([x, v])
 
